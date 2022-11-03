@@ -9,16 +9,17 @@ app.get('/', function (req, res) {
 app.post('/login', function (req, res) {
    var pass = req.params.password;
    var email = req.params.email;
+   var name = req.params.name;
 
    const sqlite3 = require('sqlite3').verbose();
 
    // open the database
-   let db = new sqlite3.Database('./db/pass.db');
+   let db = new sqlite3.Database('./db/nopass.sqlite3');
 
-   let sql = `SELECT email, password FROM users WHERE email = ?`;
+   let sql = `SELECT email, password, name FROM users WHERE name = ?`;
    var names = '';
 
-   db.all(sql, email, (err, rows) => {
+   db.all(sql, name, (err, rows) => {
    if (err) {
       throw err;
    }
@@ -31,7 +32,7 @@ app.post('/login', function (req, res) {
    // close the database connection
    db.close();
 
-   res.send('Hello World');
+   res.send(names);
 })
 
 var server = app.listen(8081, function () {
