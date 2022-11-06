@@ -1,50 +1,59 @@
-var express = require('express');
-var app = express();
+let express = require('express');
+let path = require("path");
 const sqlite3 = require('sqlite3').verbose();
+let bodyParser = require('body-parser')
+
+let app = express();
+app.use(express.static("frontend"));
+
+// create application/json parser
+let jsonParser = bodyParser.json()
+
+// create application/x-www-form-urlencoded parser
+let urlencodedParser = bodyParser.urlencoded({ extended: false })
 
 app.get('/', function (req, res) {
-   res.send('Hello World');
+   //res.send('Hello World');
+   res.sendFile(path.join(__dirname + '/frontend/index.html'));
 })
 
+app.get('/home', function (req, res) {
+   //res.send('Hello World');
+   res.sendFile(path.join(__dirname + '/frontend/pages/home.html'));
+})
 
-app.post('/login', function (req, res) {
-   //var pass = req.params.password;
-   //var email = req.params.email;
-   var name = req.query.name;
+app.post('/login', urlencodedParser, function (req, res) {
+   let user = req.body.user;
+   let pass = req.body.pwd;
 
-   console.log(name);
+   console.log(user, ":", pass);
 
    let db = new sqlite3.Database('./db/nopass.sqlite3');
 
-   let sql = `SELECT email, password, name FROM users WHERE name = ?`;
-   var names = '';
-   var password = '';
-   var mail = '';
+   let sql = "SELECT email, password, name FROM users WHERE email = '" + user + "';";
+   //let sql = `SELECT email, password, name FROM users WHERE email = ?`;
+   let loginSuccessful = false;
+   let dbRows;
 
-   db.all(sql, name, (err, rows) => {
-   if (err) {
-      throw err;
-   }
-   rows.forEach((row) => {
-      console.log(row.name);
-      console.log(row.password);
-      console.log(row.email);
-
-      names += row.name + ", ";
-      password += row.password + ", ";
-      mail += row.email + ", ";
-   });
+   db.all(sql, (err, rows) => {
+      if (err) {
+         throw err;
+      }
+      dbRows = rows;
+      rows.forEach((row) => {
+         if(row.email == user && row.password == pass) {
+            loginSuccessful = true;
+         }
+         console.log(row.name, ",", row.password, ",", row.email);
+      });
    });
 
    db.close((err) => {
       if(err){console.log(err.message); return}
-      res.send("name: " + names + " pass: " + password + " email: " + mail);
+      res.send({"success" : loginSuccessful, "db" : dbRows});
   });
 })
 
-var server = app.listen(8081, function () {
-   var host = server.address().address
-   var port = server.address().port
-   
-   console.log("Example app listening at http://%s:%s", host, port)
+let server = app.listen(8081,  function () {
+   console.log("Example app listening at http://localhost:8081")
 })
